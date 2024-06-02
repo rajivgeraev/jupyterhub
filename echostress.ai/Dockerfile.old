@@ -1,0 +1,44 @@
+# Copyright (c) Jupyter Development Team.
+# Distributed under the terms of the Modified BSD License.
+ARG JUPYTERHUB_VERSION
+FROM quay.io/jupyterhub/jupyterhub:$JUPYTERHUB_VERSION
+
+# Install dockerspawner, nativeauthenticator, and other AI/ML and audio processing libraries
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    gnupg2 \
+    curl \
+    ca-certificates
+
+# Add the NVIDIA package repositories
+RUN distribution=$(. /etc/os-release;echo $ID$VERSION_ID) && \
+    curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | apt-key add - && \
+    curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | tee /etc/apt/sources.list.d/nvidia-docker.list
+
+# Install NVIDIA Container Toolkit
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    nvidia-container-toolkit && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install dockerspawner, nativeauthenticator
+# hadolint ignore=DL3013
+RUN python3 -m pip install --no-cache-dir \
+    dockerspawner \
+    jupyterhub-nativeauthenticator \
+    tensorflow \
+    torch torchvision torchaudio \
+    scikit-learn \
+    keras \
+    librosa \
+    soundfile \
+    pydub \
+    wave \
+    numpy \
+    pandas \
+    matplotlib \
+    seaborn \
+    jupyter \
+    spectrogram
+
+CMD ["jupyterhub", "-f", "/srv/jupyterhub/jupyterhub_config.py"]
